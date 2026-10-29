@@ -13,16 +13,16 @@ export {
   CodeQualityResultJSONSchema,
   TestCoverageResultJSONSchema,
   RefactoringSuggestionJSONSchema
-} from './analysis-results';
+} from './analysis-results.js';
 export type {
   CodeQualityResult,
   TestCoverageResult,
   RefactoringSuggestion
-} from './analysis-results';
+} from './analysis-results.js';
 
 // Report schemas and types
 export {
   ReviewReportSchema,
   ReviewReportJSONSchema
-} from './report-types';
-export type { ReviewReport } from './report-types';
+} from './report-types.js';
+export type { ReviewReport } from './report-types.js';

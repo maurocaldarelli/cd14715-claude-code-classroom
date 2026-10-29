@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 import {
   CodeQualityResultSchema,
   TestCoverageResultSchema,
   RefactoringSuggestionSchema
-} from './analysis-results';
+} from './analysis-results.js';
 
 /**
  * Complete Review Report Schema
@@ -38,7 +37,7 @@ export const ReviewReportSchema = z.object({
   metadata: z.object({
     analyzedAt: z.string(),
     duration: z.number(),
-    agentVersions: z.record(z.string())
+    agentVersions: z.record(z.string(), z.string())
   })
 });
 
@@ -48,16 +47,19 @@ export const ReviewReportSchema = z.object({
 export type ReviewReport = z.infer<typeof ReviewReportSchema>;
 
 type JsonSchema = Record<string, unknown>;
-const toJsonSchema = (schema: z.ZodTypeAny): JsonSchema =>
-  (zodToJsonSchema as (s: unknown, options?: unknown) => unknown)(
-    schema,
-    { $refStrategy: 'root' }
-  ) as JsonSchema;
+// Zod 4 ships its own converter; reused sub-schemas are inlined (no $ref).
+// The SDK's validator only knows draft-07, so drop the "$schema" URI.
+const toJsonSchema = (schema: z.ZodType): JsonSchema => {
+  const { $schema: _omit, ...rest } = z.toJSONSchema(schema, {
+    target: 'draft-7',
+    reused: 'inline'
+  }) as JsonSchema;
+  return rest;
+};
 
 /**
  * JSON Schema for SDK structured outputs
  * Per SDK docs: https://platform.claude.com/docs/en/agent-sdk/structured-outputs
- * Use $refStrategy: 'root' to properly inline all $ref definitions
  */
 const rawSchema: JsonSchema = toJsonSchema(ReviewReportSchema);
 
