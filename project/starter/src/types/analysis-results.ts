@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 
 /**
  * Structured output schemas for subagent analysis results
@@ -70,16 +69,19 @@ export type TestCoverageResult = z.infer<typeof TestCoverageResultSchema>;
 export type RefactoringSuggestion = z.infer<typeof RefactoringSuggestionSchema>;
 
 type JsonSchema = Record<string, unknown>;
-const toJsonSchema = (schema: z.ZodTypeAny): JsonSchema =>
-  (zodToJsonSchema as (s: unknown, options?: unknown) => unknown)(
-    schema,
-    { $refStrategy: 'root' }
-  ) as JsonSchema;
+// Zod 4 ships its own converter; reused sub-schemas are inlined (no $ref).
+// The SDK's validator only knows draft-07, so drop the "$schema" URI.
+const toJsonSchema = (schema: z.ZodType): JsonSchema => {
+  const { $schema: _omit, ...rest } = z.toJSONSchema(schema, {
+    target: 'draft-7',
+    reused: 'inline'
+  }) as JsonSchema;
+  return rest;
+};
 
 /**
  * Convert Zod schemas to JSON Schema for SDK structured outputs
  * Per SDK docs: https://platform.claude.com/docs/en/agent-sdk/structured-outputs
- * Use $refStrategy: 'root' to properly inline all $ref definitions
  */
 export const CodeQualityResultJSONSchema: JsonSchema = toJsonSchema(CodeQualityResultSchema);
 export const TestCoverageResultJSONSchema: JsonSchema = toJsonSchema(TestCoverageResultSchema);

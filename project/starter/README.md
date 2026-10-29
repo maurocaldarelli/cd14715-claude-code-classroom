@@ -135,6 +135,19 @@ PROJECT_ROOT=/absolute/path/to/project/starter
 LOG_LEVEL=info
 ```
 
+**Local Setup with a Vocareum key (`voc-...`):**
+```bash
+# The key only works through the Vocareum proxy: copy both values from the workspace
+ANTHROPIC_API_KEY=voc-your-key-here
+ANTHROPIC_BASE_URL=https://claude.vocareum.com
+
+ANTHROPIC_MODEL=claude-sonnet-4-5-20250929
+PROJECT_ROOT=/absolute/path/to/project/starter
+```
+
+> Values in `.env` **override** variables already set in your shell (`src/env.ts`),
+> so a system-wide `ANTHROPIC_BASE_URL` can't send your key to the wrong endpoint.
+
 ### Running
 
 ```bash
@@ -162,11 +175,33 @@ npm test -- orchestrator.test.ts
 npm test -- --watch
 ```
 
+## Implementation Notes
+
+- **One orchestrator session.** `CodeReviewOrchestrator` runs a single Agent SDK `query()`
+  that registers the three subagents, fetches the PR files through the GitHub MCP server,
+  launches the subagents with the `Task` tool (in the foreground, in parallel) and returns the
+  aggregated report as structured output (JSON Schema generated from the Zod schemas).
+- **Validation.** The result is validated with Zod. Reports with no files, or whose summaries
+  say the analysis is still running, are rejected and retried. `metadata.analyzedAt` and
+  `metadata.duration` are set by the orchestrator, not by the model.
+- **Reliability.** Each review goes through the rate limiter, a timeout (10 min) and a retry
+  with exponential backoff (2 attempts). If the GitHub MCP server fails to start, the review
+  fails fast. `npx` can take 20-60 s to start an MCP server, so `MCP_TIMEOUT` defaults to 120 s
+  (override it in `.env`).
+- **Skills.** `.claude/skills/` contains `javascript-best-practices`, `typescript-patterns`,
+  `security-analysis` and `python-code-review`. The root `.gitignore` of the starter ignores
+  `.claude/`, so new skills need `git add -f`.
+- **Dependency versions.** The SDK is `@anthropic-ai/claude-agent-sdk` 0.3.x with Zod 4
+  (`z.toJSONSchema`, draft-07, no `$schema` key). With the originally pinned SDK 0.1.77 every
+  tool call failed with `400 tool_use ids must be unique` through the Vocareum endpoint.
+- **Tests.** `tests/` mocks the SDK `query` function through the `queryFn` option, so no API
+  key, network or MCP server is needed. The real-PR test is `it.skip`.
+
 ## Key Technologies
 
 - **Claude Agent SDK** - Multi-agent orchestration framework
 - **Model Context Protocol (MCP)** - External data integration
-- **Zod** - Schema validation and type safety
+- **Zod 4** - Schema validation and type safety
 - **TypeScript** - Type-safe development
 - **Vitest** - Testing framework
 - **Winston** - Structured logging
@@ -175,12 +210,12 @@ npm test -- --watch
 
 Your implementation is complete when:
 
-- [ ] TypeScript compiles without errors: `npm run build`
-- [ ] All tests pass: `npm test`
-- [ ] Can review a real PR: `npm start owner repo pr-number`
-- [ ] Generates reports in at least one format (MD, HTML, JSON)
-- [ ] Rate limiting prevents API throttling (Optional)
-- [ ] Errors are handled gracefully (Recommended)
+- [x] TypeScript compiles without errors: `npm run build`
+- [x] All tests pass: `npm test`
+- [x] Can review a real PR: `npm start owner repo pr-number` (verified with `npm run dev -- octocat Hello-World 1`)
+- [x] Generates reports in at least one format (MD, HTML, JSON)
+- [x] Rate limiting prevents API throttling (Optional)
+- [x] Errors are handled gracefully (Recommended)
 
 ## Resources
 
