@@ -162,6 +162,20 @@ npm start <owner> <repo> <pr-number>
 npm run dev -- facebook react 12345
 ```
 
+### Report output
+
+Each review writes three files to `reports/` (created in the directory you run the command from,
+git-ignored), named `<owner>-<repo>-pr<number>.<ext>`:
+
+```
+reports/octocat-Hello-World-pr1.md     # Markdown, ready to paste as a PR comment
+reports/octocat-Hello-World-pr1.html   # HTML summary page
+reports/octocat-Hello-World-pr1.json   # full structured report (validated with Zod)
+```
+
+Re-reviewing the same PR overwrites the previous files. Logs go to `logs/combined.log` and
+`logs/error.log`.
+
 ### Testing
 
 ```bash

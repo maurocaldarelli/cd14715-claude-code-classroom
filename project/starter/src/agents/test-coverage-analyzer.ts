@@ -9,8 +9,12 @@ export const testCoverageAnalyzer: AgentDefinition = {
     'Read',
     'Grep',
     'Glob',
+    // Language skills help judge what a good test for the code looks like
+    'Skill',
     'mcp__github__get_file_contents',
     'mcp__github__search_code'
   ],
+  // Pinned to Sonnet: finding untested paths needs real code reasoning (Haiku is
+  // too shallow), while Opus would multiply cost for every file x subagent.
   model: 'sonnet'
 };

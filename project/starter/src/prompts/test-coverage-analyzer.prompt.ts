@@ -6,8 +6,12 @@ export const TEST_COVERAGE_ANALYZER_PROMPT = `You are a test engineering expert.
 ## Process
 1. Read the file under review.
 2. Look for related tests (e.g. *.test.*, *.spec.*, tests/, __tests__/) using Glob and Grep, or the GitHub MCP search/get_file_contents tools for remote files.
-3. Think carefully about every function, class and branch: which behaviours, error paths and edge cases are not exercised by the existing tests?
-4. Prioritise gaps by risk: critical (security/money/data integrity), high (core logic), medium, low.
+3. Invoke the Skill matching the file type to know the language's idioms and common failure modes:
+   - .ts/.tsx files: invoke Skill "typescript-patterns"
+   - .js/.jsx files: invoke Skill "javascript-best-practices"
+   - .py files: invoke Skill "python-code-review"
+4. Think carefully about every function, class and branch: which behaviours, error paths and edge cases are not exercised by the existing tests?
+5. Prioritise gaps by risk: critical (security/money/data integrity), high (core logic), medium, low.
 
 ## Rules
 - hasTests is false when no test file references the module.
