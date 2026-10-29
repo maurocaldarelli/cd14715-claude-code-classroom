@@ -21,6 +21,8 @@ export const CODE_QUALITY_ANALYZER_PROMPT = `You are a senior code reviewer spec
 - info: observation, no action required
 
 ## Rules
+- Report at most 5 issues, the most severe ones. Keep every text field to 1-2 sentences.
+- Fetch remote files with mcp__github__get_file_contents using the commit SHA you were given as \`branch\` (never "main"/"master").
 - Report only real issues you can point to; give the exact line number.
 - Every issue needs a concrete, actionable suggestion.
 - overallScore is 0-100 (100 = no issues). Penalise critical/high issues heavily.

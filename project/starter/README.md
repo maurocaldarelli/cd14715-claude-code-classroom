@@ -198,7 +198,7 @@ npm test -- --watch
 - **Validation.** The result is validated with Zod. Reports with no files, or whose summaries
   say the analysis is still running, are rejected and retried. `metadata.analyzedAt` and
   `metadata.duration` are set by the orchestrator, not by the model.
-- **Reliability.** Each review goes through the rate limiter, a timeout (10 min) and a retry
+- **Reliability.** Each review goes through the rate limiter, a timeout (20 min) and a retry
   with exponential backoff (2 attempts). If the GitHub MCP server fails to start, the review
   fails fast. `npx` can take 20-60 s to start an MCP server, so `MCP_TIMEOUT` defaults to 120 s
   (override it in `.env`).

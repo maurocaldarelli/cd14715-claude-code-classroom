@@ -83,6 +83,26 @@ describe('Skills referenced by prompts', () => {
   });
 });
 
+describe('GitHub file access instructions', () => {
+  it.each(Object.entries(agents))('%s fetches files at the PR head SHA, not main/master', (_n, { prompt }) => {
+    expect(prompt).toContain('commit SHA');
+    expect(prompt).toContain('never "main"/"master"');
+  });
+
+  it('test-coverage-analyzer falls back when search_code needs authentication', () => {
+    expect(TEST_COVERAGE_ANALYZER_PROMPT).toContain('mcp__github__search_code');
+    expect(TEST_COVERAGE_ANALYZER_PROMPT).toContain('authentication error');
+  });
+});
+
+describe('output size limits', () => {
+  it('cap the items each subagent returns, to keep aggregation fast', () => {
+    expect(CODE_QUALITY_ANALYZER_PROMPT).toContain('at most 5 issues');
+    expect(TEST_COVERAGE_ANALYZER_PROMPT).toContain('at most 5 untested paths');
+    expect(REFACTORING_SUGGESTER_PROMPT).toContain('at most 3 suggestions');
+  });
+});
+
 describe('orchestrator prompt', () => {
   const prompt = buildOrchestratorPrompt('octocat', 'Hello-World', 7);
 
@@ -90,6 +110,17 @@ describe('orchestrator prompt', () => {
     for (const name of Object.keys(agents)) expect(prompt).toContain(name);
     expect(prompt).toContain('octocat/Hello-World');
     expect(prompt).toContain('#7');
+  });
+
+  it('asks for the PR head SHA and passes it to the subagents', () => {
+    expect(prompt).toContain('mcp__github__get_pull_request ');
+    expect(prompt).toContain('head commit SHA');
+  });
+
+  it('lists the allowed enum values for aggregation', () => {
+    for (const value of ['critical | high | medium | low | info', 'function | class | branch | edge-case']) {
+      expect(prompt).toContain(value);
+    }
   });
 
   it('requires foreground, parallel subagents', () => {

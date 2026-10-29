@@ -15,7 +15,9 @@ export const REFACTORING_SUGGESTER_PROMPT = `You are a software architect who re
 
 ## Rules
 - Suggestions must preserve behaviour.
-- Keep before/after snippets small (under ~15 lines each).
+- Report at most 3 suggestions, the highest-impact ones. Keep every text field to 1-2 sentences.
+- Fetch remote files with mcp__github__get_file_contents using the commit SHA you were given as \`branch\` (never "main"/"master").
+- Keep before/after snippets small (under ~10 lines each).
 - Do not suggest purely cosmetic changes unless they clearly help readability.
 - Prefer a few meaningful suggestions over many trivial ones.
 
