@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { CodeReviewOrchestrator } from '../src/orchestrator';
 import type { QueryFn } from '../src/orchestrator';
 import { ReviewReportSchema } from '../src/types';
@@ -92,6 +92,56 @@ describe('CodeReviewOrchestrator', () => {
       const status = orchestrator.getRateLimiter().getStatus();
       expect(status.availableRequests).toBe(10);
       expect(status.availableTokens).toBe(5000);
+    });
+  });
+
+  describe('Extended thinking', () => {
+    const originalEnv = process.env.THINKING_BUDGET_TOKENS;
+    afterEach(() => {
+      if (originalEnv === undefined) delete process.env.THINKING_BUDGET_TOKENS;
+      else process.env.THINKING_BUDGET_TOKENS = originalEnv;
+    });
+
+    const budgetOf = (options: ConstructorParameters<typeof CodeReviewOrchestrator>[0] = {}) =>
+      new CodeReviewOrchestrator({ queryFn: mockQuery([]), ...options }).getThinkingBudget();
+
+    it('should enable extended thinking by default', () => {
+      delete process.env.THINKING_BUDGET_TOKENS;
+      expect(budgetOf()).toBe(8000);
+    });
+
+    it('should read the budget from THINKING_BUDGET_TOKENS', () => {
+      process.env.THINKING_BUDGET_TOKENS = '5000';
+      expect(budgetOf()).toBe(5000);
+    });
+
+    it('should prefer the explicit option over the environment', () => {
+      process.env.THINKING_BUDGET_TOKENS = '5000';
+      expect(budgetOf({ maxThinkingTokens: 12000 })).toBe(12000);
+    });
+
+    it('should clamp small budgets to the API minimum', () => {
+      expect(budgetOf({ maxThinkingTokens: 100 })).toBe(1024);
+    });
+
+    it('should disable thinking with 0 or an invalid value', () => {
+      expect(budgetOf({ maxThinkingTokens: 0 })).toBeUndefined();
+      process.env.THINKING_BUDGET_TOKENS = 'abc';
+      expect(budgetOf()).toBeUndefined();
+    });
+
+    it('should pass maxThinkingTokens to the SDK only when enabled', async () => {
+      const enabled = mockQuery([successResult(validReport)]);
+      await new CodeReviewOrchestrator({ queryFn: enabled, maxThinkingTokens: 6000, ...fastOptions })
+        .reviewPullRequest('o', 'r', 1);
+      expect((enabled as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![0].options.maxThinkingTokens).toBe(6000);
+
+      const disabled = mockQuery([successResult(validReport)]);
+      await new CodeReviewOrchestrator({ queryFn: disabled, maxThinkingTokens: 0, ...fastOptions })
+        .reviewPullRequest('o', 'r', 1);
+      expect((disabled as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![0].options).not.toHaveProperty(
+        'maxThinkingTokens'
+      );
     });
   });
 

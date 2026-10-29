@@ -45,11 +45,20 @@ export interface OrchestratorOptions {
   retryDelayMs?: number;
   /** Max agent turns for the orchestrator session (default: 100) */
   maxTurns?: number;
+  /**
+   * Extended thinking budget in tokens (default: THINKING_BUDGET_TOKENS or 8000; 0 disables).
+   * The SDK only exposes this per session, so it applies to the orchestrator and its
+   * subagents, including the test-coverage-analyzer that benefits most from it.
+   */
+  maxThinkingTokens?: number;
   /** Override the SDK query function (used by tests) */
   queryFn?: QueryFn;
 }
 
 const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
+const DEFAULT_THINKING_TOKENS = 8000;
+/** Smallest thinking budget accepted by the API */
+const MIN_THINKING_TOKENS = 1024;
 const ESTIMATED_TOKENS_PER_REVIEW = 10000;
 
 const GITHUB_TOOLS = [
@@ -59,6 +68,16 @@ const GITHUB_TOOLS = [
   'mcp__github__search_code'
 ];
 const ESLINT_TOOLS = ['mcp__eslint__lint-files'];
+
+/**
+ * Turn a requested thinking budget into the value passed to the SDK:
+ * undefined (disabled) for 0, negative or non-numeric values, otherwise
+ * at least the API minimum.
+ */
+function resolveThinkingBudget(requested: number): number | undefined {
+  if (!Number.isFinite(requested) || requested <= 0) return undefined;
+  return Math.max(MIN_THINKING_TOKENS, Math.floor(requested));
+}
 
 /**
  * Main Code Review Orchestrator
@@ -73,6 +92,7 @@ export class CodeReviewOrchestrator {
   private readonly maxRetries: number;
   private readonly retryDelayMs: number;
   private readonly maxTurns: number;
+  private readonly maxThinkingTokens: number | undefined;
   private readonly rateLimits: Partial<RateLimiterConfig>;
 
   constructor(options: OrchestratorOptions = {}) {
@@ -85,6 +105,14 @@ export class CodeReviewOrchestrator {
     this.maxRetries = options.maxRetries ?? 2;
     this.retryDelayMs = options.retryDelayMs ?? 1000;
     this.maxTurns = options.maxTurns ?? 100;
+    this.maxThinkingTokens = resolveThinkingBudget(
+      options.maxThinkingTokens ?? Number(process.env.THINKING_BUDGET_TOKENS ?? DEFAULT_THINKING_TOKENS)
+    );
+  }
+
+  /** Extended thinking budget in tokens, or undefined when disabled */
+  getThinkingBudget(): number | undefined {
+    return this.maxThinkingTokens;
   }
 
   /** Rate limiter used by this orchestrator */
@@ -239,6 +267,7 @@ export class CodeReviewOrchestrator {
       // Load .claude/skills/ from the project so subagents can invoke Skills
       settingSources: ['project'],
       maxTurns: this.maxTurns,
+      ...(this.maxThinkingTokens ? { maxThinkingTokens: this.maxThinkingTokens } : {}),
       systemPrompt:
         'You are the orchestrator of a multi-agent code review. Delegate per-file analysis to subagents using the Task tool and aggregate their results.',
       agents: {
