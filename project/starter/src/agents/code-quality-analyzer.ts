@@ -13,5 +13,7 @@ export const codeQualityAnalyzer: AgentDefinition = {
     'mcp__github__get_file_contents',
     'mcp__eslint__lint-files'
   ],
+  // Pinned to Sonnet: security and bug-risk analysis needs strong code reasoning,
+  // while Opus would multiply cost for every file x subagent.
   model: 'sonnet'
 };

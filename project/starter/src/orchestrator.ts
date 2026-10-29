@@ -37,7 +37,7 @@ export interface OrchestratorOptions {
   model?: string;
   /** Directory containing .claude/skills/ (defaults to PROJECT_ROOT or cwd) */
   projectRoot?: string;
-  /** Timeout for a whole review, in ms (default: 10 minutes) */
+  /** Timeout for a whole review, in ms (default: 20 minutes) */
   timeoutMs?: number;
   /** Max attempts for a review before giving up (default: 2) */
   maxRetries?: number;
@@ -55,7 +55,8 @@ export interface OrchestratorOptions {
   queryFn?: QueryFn;
 }
 
-const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000;
+// A 4-file PR took ~9 minutes (the final structured-output aggregation dominates)
+const DEFAULT_TIMEOUT_MS = 20 * 60 * 1000;
 const DEFAULT_THINKING_TOKENS = 8000;
 /** Smallest thinking budget accepted by the API */
 const MIN_THINKING_TOKENS = 1024;
@@ -276,7 +277,8 @@ export class CodeReviewOrchestrator {
         'refactoring-suggester': refactoringSuggester
       },
       mcpServers: mcpServersConfig,
-      allowedTools: ['Task', 'Skill', 'Read', 'Grep', 'Glob', ...GITHUB_TOOLS, ...ESLINT_TOOLS],
+      // "Agent" is the subagent tool's name since SDK 0.3 ("Task" in older versions)
+      allowedTools: ['Agent', 'Task', 'Skill', 'Read', 'Grep', 'Glob', ...GITHUB_TOOLS, ...ESLINT_TOOLS],
       permissionMode: 'dontAsk',
       outputFormat: {
         type: 'json_schema',

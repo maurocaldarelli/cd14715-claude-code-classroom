@@ -171,7 +171,7 @@ describe('CodeReviewOrchestrator', () => {
         'refactoring-suggester',
         'test-coverage-analyzer'
       ]);
-      expect(call.options.allowedTools).toContain('Task');
+      expect(call.options.allowedTools).toEqual(expect.arrayContaining(['Agent', 'Task']));
       expect(call.prompt).toContain('in parallel');
     });
 

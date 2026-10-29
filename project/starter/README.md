@@ -162,6 +162,20 @@ npm start <owner> <repo> <pr-number>
 npm run dev -- facebook react 12345
 ```
 
+### Report output
+
+Each review writes three files to `reports/` (created in the directory you run the command from,
+git-ignored), named `<owner>-<repo>-pr<number>.<ext>`:
+
+```
+reports/octocat-Hello-World-pr1.md     # Markdown, ready to paste as a PR comment
+reports/octocat-Hello-World-pr1.html   # HTML summary page
+reports/octocat-Hello-World-pr1.json   # full structured report (validated with Zod)
+```
+
+Re-reviewing the same PR overwrites the previous files. Logs go to `logs/combined.log` and
+`logs/error.log`.
+
 ### Testing
 
 ```bash
@@ -184,7 +198,7 @@ npm test -- --watch
 - **Validation.** The result is validated with Zod. Reports with no files, or whose summaries
   say the analysis is still running, are rejected and retried. `metadata.analyzedAt` and
   `metadata.duration` are set by the orchestrator, not by the model.
-- **Reliability.** Each review goes through the rate limiter, a timeout (10 min) and a retry
+- **Reliability.** Each review goes through the rate limiter, a timeout (20 min) and a retry
   with exponential backoff (2 attempts). If the GitHub MCP server fails to start, the review
   fails fast. `npx` can take 20-60 s to start an MCP server, so `MCP_TIMEOUT` defaults to 120 s
   (override it in `.env`).
