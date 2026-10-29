@@ -188,6 +188,11 @@ npm test -- --watch
   with exponential backoff (2 attempts). If the GitHub MCP server fails to start, the review
   fails fast. `npx` can take 20-60 s to start an MCP server, so `MCP_TIMEOUT` defaults to 120 s
   (override it in `.env`).
+- **Extended thinking.** The review session runs with a thinking budget of 8000 tokens
+  (`THINKING_BUDGET_TOKENS` in `.env` or the `maxThinkingTokens` option; minimum 1024, `0`
+  disables it). The SDK only exposes this per session, not per subagent, so it applies to the
+  orchestrator and all three subagents, including the test-coverage-analyzer. It adds latency
+  and cost.
 - **Skills.** `.claude/skills/` contains `javascript-best-practices`, `typescript-patterns`,
   `security-analysis` and `python-code-review`. The root `.gitignore` of the starter ignores
   `.claude/`, so new skills need `git add -f`.
